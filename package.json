@@ -1,0 +1,11 @@
+{
+  "name": "workspace-atlas-desktop",
+  "private": true,
+  "version": "0.8.0",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
