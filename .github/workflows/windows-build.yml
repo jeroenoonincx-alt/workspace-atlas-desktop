@@ -17,11 +17,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
+      - name: Create Windows icon
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path src-tauri/icons | Out-Null
+          $icon = 'AAABAAEAICAAAAAAIAAvAQAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAgAAAAIAgGAAAAc3p69AAAAPZJREFUeJztl8ENwjAMRV3EALAGjFFOjMEIDMIIjMGJNZijI8ApkuXaP46TkiLxL5Xa2H75Sd102B3GN3XUpmfxPwAR0TYSdHnczGf387Uo11CyCVHhKIgLQBbmyafXk/bHk2tsCIAn1JJJAG9cEtyEnuL8ysXHo6UzAbwzQPJAZF/DaHFvvAqQaGuLSwjNhXAjkuuu7QOPZgCtZ59kudC9FYcALLsjy/CbDnQH0Fovut8coKVmAKhp1Mh6vcMOSLsj9psArV1AzS3rQC1ELt4E8H7PvcWt1g4dyEGkda85Ea3/TIhAkJqeiktAFv0vWELra8Xf1gf3n3sb0KiR0gAAAABJRU5ErkJggg=='
+          [IO.File]::WriteAllBytes('src-tauri/icons/icon.ico', [Convert]::FromBase64String($icon))
       - name: Install dependencies
         run: npm install
       - name: Build Tauri Windows app
