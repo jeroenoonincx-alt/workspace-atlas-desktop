@@ -7,6 +7,7 @@ on:
     paths:
       - "dist/**"
       - "src-tauri/**"
+      - "scripts/**"
       - "package.json"
       - ".github/workflows/windows-build.yml"
 
@@ -40,6 +41,17 @@ jobs:
         run: npm install
       - name: Build Tauri Windows app
         run: npm run tauri build
+      - name: Smoke-test actual Tauri WebView
+        shell: pwsh
+        run: |
+          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9222 --remote-allow-origins=*'
+          $app = Start-Process -FilePath 'src-tauri/target/release/workspace-atlas-desktop.exe' -PassThru
+          try {
+            node scripts/tauri-smoke-test.js
+          }
+          finally {
+            Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+          }
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
