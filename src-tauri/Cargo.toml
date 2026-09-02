@@ -1,6 +1,6 @@
 [package]
 name = "workspace-atlas-desktop"
-version = "0.8.1"
+version = "0.8.2"
 description = "Workspace Atlas for Desktop Start"
 authors = ["Jeroen Oonincx"]
 edition = "2021"
@@ -13,7 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["devtools"] }
+tauri = { version = "2", features = [] }
 rfd = "0.15"
 open = "5"
 
