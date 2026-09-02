@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "dist/**"
+      - "source/**"
       - "src-tauri/**"
       - "scripts/**"
       - "package.json"
@@ -16,46 +16,85 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
+
       - uses: dtolnay/rust-toolchain@stable
+
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
-      - name: Fix startup overlay and testversion
+
+      - name: Herstel en verifieer exacte Desktop Start-bron
+        shell: pwsh
+        run: |
+          $parts = Get-ChildItem 'source/0.8.2/part*.b64' | Sort-Object Name
+          if ($parts.Count -ne 5) { throw "Niet alle vijf bronchunks aanwezig." }
+          $base64 = ($parts | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
+          $gzipPath = Join-Path $env:RUNNER_TEMP 'atlas-0.8.2.html.gz'
+          [IO.File]::WriteAllBytes($gzipPath, [Convert]::FromBase64String($base64))
+          New-Item -ItemType Directory -Force -Path 'dist' | Out-Null
+          $input = [IO.File]::OpenRead($gzipPath)
+          try {
+            $gzip = [IO.Compression.GZipStream]::new($input, [IO.Compression.CompressionMode]::Decompress)
+            try {
+              $output = [IO.File]::Create('dist/index.html')
+              try { $gzip.CopyTo($output) } finally { $output.Dispose() }
+            } finally { $gzip.Dispose() }
+          } finally { $input.Dispose() }
+          $hash = (Get-FileHash 'dist/index.html' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected = 'b4009a765753415df1670259130eb9c7a6f088e6524d4ecc65ea0ff7d9a5284b'
+          if ($hash -ne $expected) { throw "Bronhash wijkt af: $hash" }
+          Write-Host "Exacte 0.8.2-bron geverifieerd: $hash"
+
+      - name: Voeg interne runtime-test toe
         shell: pwsh
         run: |
           $path = 'dist/index.html'
-          $html = Get-Content $path -Raw
-          $html = $html.Replace('.view[hidden]{display:none}', '.view[hidden],.modalback[hidden],.toast[hidden]{display:none!important}')
-          $html = $html.Replace('0.8.0', '0.8.1')
-          Set-Content -Path $path -Value $html -Encoding UTF8
+          $html = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)
+          $smoke = [IO.File]::ReadAllText('scripts/atlas-runtime-smoke.js', [Text.Encoding]::UTF8)
+          if (-not $html.Contains('</body>')) { throw 'HTML mist afsluitende body-tag.' }
+          $html = $html.Replace('</body>', "<script>`n$smoke`n</script>`n</body>")
+          [IO.File]::WriteAllText($path, $html, [Text.UTF8Encoding]::new($false))
+
       - name: Create Windows icon
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path src-tauri/icons | Out-Null
           $icon = 'AAABAAEAICAAAAAAIAAvAQAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAgAAAAIAgGAAAAc3p69AAAAPZJREFUeJztl8ENwjAMRV3EALAGjFFOjMEIDMIIjMGJNZijI8ApkuXaP46TkiLxL5Xa2H75Sd102B3GN3XUpmfxPwAR0TYSdHnczGf387Uo11CyCVHhKIgLQBbmyafXk/bHk2tsCIAn1JJJAG9cEtyEnuL8ysXHo6UzAbwzQPJAZF/DaHFvvAqQaGuLSwjNhXAjkuuu7QOPZgCtZ59kudC9FYcALLsjy/CbDnQH0Fovut8coKVmAKhp1Mh6vcMOSLsj9psArV1AzS3rQC1ELt4E8H7PvcWt1g4dyEGkda85Ea3/TIhAkJqeiktAFv0vWELra8Xf1gf3n3sb0KiR0gAAAABJRU5ErkJggg=='
           [IO.File]::WriteAllBytes('src-tauri/icons/icon.ico', [Convert]::FromBase64String($icon))
+
       - name: Install dependencies
         run: npm install
+
       - name: Build Tauri Windows app
         run: npm run tauri build
-      - name: Smoke-test actual Tauri WebView
+
+      - name: Verifieer echte Tauri WebView en kernfuncties
         shell: pwsh
         run: |
-          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9222 --remote-allow-origins=*'
+          $report = Join-Path $env:TEMP 'workspace-atlas-smoke.json'
+          Remove-Item $report -Force -ErrorAction SilentlyContinue
+          $env:ATLAS_SMOKE = '1'
           $app = Start-Process -FilePath 'src-tauri/target/release/workspace-atlas-desktop.exe' -PassThru
           try {
-            node scripts/tauri-smoke-test.js
+            $deadline = (Get-Date).AddSeconds(45)
+            while ((Get-Date) -lt $deadline -and -not (Test-Path $report)) { Start-Sleep -Milliseconds 500 }
+            if (-not (Test-Path $report)) { throw 'De echte Tauri WebView heeft geen functierapport opgeleverd.' }
+            $result = Get-Content $report -Raw | ConvertFrom-Json
+            if (-not $result.ok) { throw "Tauri functietest mislukt: $($result.error) | geslaagd: $($result.checks -join ', ')" }
+            Write-Host "Tauri functietest geslaagd: $($result.checks -join ', ')"
           }
           finally {
             Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
           }
+
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: Workspace-Atlas-Desktop-Windows-0.8.1-TEST
+          name: Workspace-Atlas-Desktop-Windows-0.8.2-TEST
           path: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/workspace-atlas-desktop.exe
