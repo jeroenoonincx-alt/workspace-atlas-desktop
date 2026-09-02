@@ -22,6 +22,14 @@ jobs:
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
+      - name: Fix startup overlay and testversion
+        shell: pwsh
+        run: |
+          $path = 'dist/index.html'
+          $html = Get-Content $path -Raw
+          $html = $html.Replace('.view[hidden]{display:none}', '.view[hidden],.modalback[hidden],.toast[hidden]{display:none!important}')
+          $html = $html.Replace('0.8.0', '0.8.1')
+          Set-Content -Path $path -Value $html -Encoding UTF8
       - name: Create Windows icon
         shell: pwsh
         run: |
@@ -35,7 +43,7 @@ jobs:
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: Workspace-Atlas-Desktop-Windows-0.8.0-TEST
+          name: Workspace-Atlas-Desktop-Windows-0.8.1-TEST
           path: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/workspace-atlas-desktop.exe
