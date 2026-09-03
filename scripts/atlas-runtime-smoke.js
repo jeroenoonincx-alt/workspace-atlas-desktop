@@ -18,7 +18,7 @@
       ok('modal-start-verborgen',document.getElementById('modal-back').hidden===true);
       ok('navigatie',document.querySelectorAll('.navbtn').length===6);
       ok('werk-tegels',document.querySelectorAll('#apps .app').length>=3);
-      ok('tauri-brug',typeof window.atlasLaunchTarget==='function'&&typeof window.atlasChooseExe==='function');
+      ok('tauri-brug',typeof window.atlasLaunchTarget==='function'&&typeof window.atlasChooseExe==='function'&&typeof window.atlasSaveBackup==='function');
 
       click('#add-app');
       await wait(80);
@@ -52,6 +52,9 @@
       click('.navbtn[data-view="inbox"]');await wait(50);
       input('inbox-title','Atlas rooktest URL');input('inbox-url','https://example.org/');document.getElementById('inbox-form').requestSubmit();await wait(50);
       ok('url-inbox',text('#inbox').indexOf('Atlas rooktest URL')>=0);
+      ok('inbox-openen-label',text('#inbox').indexOf('Openen')>=0);
+      ok('inbox-verwijderen-label',text('#inbox').indexOf('Verwijderen')>=0);
+      ok('inbox-gearchiveerd-tab',text('#view-inbox').indexOf('Gearchiveerd')>=0);
 
       click('.navbtn[data-view="collections"]');await wait(50);
       ok('activiteiten',document.querySelectorAll('#collection-list .collection-item').length>=1);
@@ -63,9 +66,9 @@
       var rejected=false;
       try{await window.atlasLaunchTarget('','','')}catch(e){rejected=String(e).indexOf('Geen geldige startoptie')>=0}
       ok('native-ipc',rejected);
-      await invoke('smoke_report',{payload:JSON.stringify({ok:true,checks:checks,version:'0.8.2'})});
+      await invoke('smoke_report',{payload:JSON.stringify({ok:true,checks:checks,version:'0.8.3'})});
     }catch(e){
-      try{await invoke('smoke_report',{payload:JSON.stringify({ok:false,checks:checks,error:String(e&&e.message||e),version:'0.8.2'})})}catch(_){}
+      try{await invoke('smoke_report',{payload:JSON.stringify({ok:false,checks:checks,error:String(e&&e.message||e),version:'0.8.3'})})}catch(_){}
     }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();

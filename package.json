@@ -1,7 +1,7 @@
 {
   "name": "workspace-atlas-desktop",
   "private": true,
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Workspace Atlas for Desktop Start — Tauri 2 Windows testbuild",
   "scripts": {
     "tauri": "tauri"

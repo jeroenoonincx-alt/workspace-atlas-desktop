@@ -1,6 +1,6 @@
 [package]
 name = "workspace-atlas-desktop"
-version = "0.8.2"
+version = "0.8.3"
 description = "Workspace Atlas for Desktop Start"
 authors = ["Jeroen Oonincx"]
 edition = "2021"

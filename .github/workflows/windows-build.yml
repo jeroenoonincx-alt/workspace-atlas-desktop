@@ -30,10 +30,10 @@ jobs:
       - name: Herstel en verifieer exacte Desktop Start-bron
         shell: pwsh
         run: |
-          $parts = Get-ChildItem 'source/0.8.2/part*.b64' | Sort-Object Name
-          if ($parts.Count -ne 5) { throw "Niet alle vijf bronchunks aanwezig." }
+          $parts = Get-ChildItem 'source/0.8.3/part*.b64' | Sort-Object Name
+          if ($parts.Count -ne 3) { throw "Niet alle drie bronchunks aanwezig." }
           $base64 = ($parts | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
-          $gzipPath = Join-Path $env:RUNNER_TEMP 'atlas-0.8.2.html.gz'
+          $gzipPath = Join-Path $env:RUNNER_TEMP 'atlas-0.8.3.html.gz'
           [IO.File]::WriteAllBytes($gzipPath, [Convert]::FromBase64String($base64))
           New-Item -ItemType Directory -Force -Path 'dist' | Out-Null
           $input = [IO.File]::OpenRead($gzipPath)
@@ -45,9 +45,9 @@ jobs:
             } finally { $gzip.Dispose() }
           } finally { $input.Dispose() }
           $hash = (Get-FileHash 'dist/index.html' -Algorithm SHA256).Hash.ToLowerInvariant()
-          $expected = 'b4009a765753415df1670259130eb9c7a6f088e6524d4ecc65ea0ff7d9a5284b'
+          $expected = '134f206ce16ea4810ea8b9e80f9ca229f26cb5cd4dd251953c133bdba39b2f46'
           if ($hash -ne $expected) { throw "Bronhash wijkt af: $hash" }
-          Write-Host "Exacte 0.8.2-bron geverifieerd: $hash"
+          Write-Host "Exacte 0.8.3-bron geverifieerd: $hash"
 
       - name: Voeg interne runtime-test toe
         shell: pwsh
@@ -59,15 +59,11 @@ jobs:
           $html = $html.Replace('</body>', "<script>`n$smoke`n</script>`n</body>")
           [IO.File]::WriteAllText($path, $html, [Text.UTF8Encoding]::new($false))
 
-      - name: Create Windows icon
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path src-tauri/icons | Out-Null
-          $icon = 'AAABAAEAICAAAAAAIAAvAQAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAgAAAAIAgGAAAAc3p69AAAAPZJREFUeJztl8ENwjAMRV3EALAGjFFOjMEIDMIIjMGJNZijI8ApkuXaP46TkiLxL5Xa2H75Sd102B3GN3XUpmfxPwAR0TYSdHnczGf387Uo11CyCVHhKIgLQBbmyafXk/bHk2tsCIAn1JJJAG9cEtyEnuL8ysXHo6UzAbwzQPJAZF/DaHFvvAqQaGuLSwjNhXAjkuuu7QOPZgCtZ59kudC9FYcALLsjy/CbDnQH0Fovut8coKVmAKhp1Mh6vcMOSLsj9psArV1AzS3rQC1ELt4E8H7PvcWt1g4dyEGkda85Ea3/TIhAkJqeiktAFv0vWELra8Xf1gf3n3sb0KiR0gAAAABJRU5ErkJggg=='
-          [IO.File]::WriteAllBytes('src-tauri/icons/icon.ico', [Convert]::FromBase64String($icon))
-
       - name: Install dependencies
         run: npm install
+
+      - name: Genereer app-iconen
+        run: npx tauri icon assets/atlas-icon.png
 
       - name: Build Tauri Windows app
         run: npm run tauri build
@@ -86,16 +82,40 @@ jobs:
             $result = Get-Content $report -Raw | ConvertFrom-Json
             if (-not $result.ok) { throw "Tauri functietest mislukt: $($result.error) | geslaagd: $($result.checks -join ', ')" }
             Write-Host "Tauri functietest geslaagd: $($result.checks -join ', ')"
+            New-Item -ItemType Directory -Force -Path 'build-output' | Out-Null
+            Copy-Item $report 'build-output/runtime-smoke.json' -Force
           }
           finally {
             Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
           }
 
+      - name: Maak buildmanifest
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path 'build-output' | Out-Null
+          $portable = 'src-tauri/target/release/workspace-atlas-desktop.exe'
+          $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*.exe' | Select-Object -First 1
+          if (-not $installer) { throw 'NSIS-installer ontbreekt.' }
+          $manifest = [ordered]@{
+            product = 'Workspace Atlas for Desktop Start'
+            version = '0.8.3'
+            candidate = 'TEST'
+            source_sha256 = '134f206ce16ea4810ea8b9e80f9ca229f26cb5cd4dd251953c133bdba39b2f46'
+            portable_sha256 = (Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
+            installer_name = $installer.Name
+            installer_sha256 = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            runtime_smoke = 'passed'
+          }
+          $manifest | ConvertTo-Json | Set-Content 'build-output/build-manifest.json' -Encoding UTF8
+          Get-Content 'build-output/build-manifest.json'
+
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: Workspace-Atlas-Desktop-Windows-0.8.2-TEST
+          name: Workspace-Atlas-Desktop-Windows-0.8.3-TEST
           path: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/workspace-atlas-desktop.exe
+            build-output/runtime-smoke.json
+            build-output/build-manifest.json
           if-no-files-found: error
