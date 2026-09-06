@@ -17,6 +17,8 @@
       ok('klok',!!text('#time').trim()&&text('#time').trim()!=='--:--');
       ok('modal-start-verborgen',document.getElementById('modal-back').hidden===true);
       ok('navigatie',document.querySelectorAll('.navbtn').length===6);
+      ok('visueel-nieuwe-hero',text('.hero-kicker').indexOf('ÉÉN STARTPUNT')>=0);
+      ok('visueel-startblokken',!!document.querySelector('.apps-panel .section-kicker'));
       ok('werk-tegels',document.querySelectorAll('#apps .app').length>=3);
       ok('tauri-brug',typeof window.atlasLaunchTarget==='function'&&typeof window.atlasChooseExe==='function'&&typeof window.atlasSaveBackup==='function');
 
@@ -66,9 +68,9 @@
       var rejected=false;
       try{await window.atlasLaunchTarget('','','')}catch(e){rejected=String(e).indexOf('Geen geldige startoptie')>=0}
       ok('native-ipc',rejected);
-      await invoke('smoke_report',{payload:JSON.stringify({ok:true,checks:checks,version:'0.8.3'})});
+      await invoke('smoke_report',{payload:JSON.stringify({ok:true,checks:checks,version:'0.8.4'})});
     }catch(e){
-      try{await invoke('smoke_report',{payload:JSON.stringify({ok:false,checks:checks,error:String(e&&e.message||e),version:'0.8.3'})})}catch(_){}
+      try{await invoke('smoke_report',{payload:JSON.stringify({ok:false,checks:checks,error:String(e&&e.message||e),version:'0.8.4'})})}catch(_){}
     }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
