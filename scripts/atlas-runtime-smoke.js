@@ -21,6 +21,7 @@
       ok('visueel-startblokken',!!document.querySelector('.apps-panel .section-kicker'));
       ok('werk-tegels',document.querySelectorAll('#apps .app').length>=3);
       ok('tauri-brug',typeof window.atlasLaunchTarget==='function'&&typeof window.atlasChooseExe==='function'&&typeof window.atlasSaveBackup==='function');
+      ok('backup-brug',typeof window.atlasChooseBackupFolder==='function'&&typeof window.atlasSaveBackupToFolder==='function');
 
       click('#add-app');
       await wait(80);
@@ -64,13 +65,20 @@
       if(cb){var before=cb.checked;cb.click();await wait(30);var cb2=document.querySelector('#activity-checklist .checkitem input[type="checkbox"]');ok('checklist',!!cb2&&cb2.checked!==before)}
       else{checks.push('checklist-geen-standaardstappen')}
 
+      click('.navbtn[data-view="settings"]');await wait(50);
+      ok('backup-instellingen',!!document.getElementById('backup-schedule')&&!!document.getElementById('backup-folder')&&!!document.getElementById('backup-time'));
+      ok('help-eenvoudig',text('#view-help').indexOf('protocolhandler')<0&&text('#view-help').indexOf('WebView')<0&&text('#view-help').indexOf('app-protocol')<0);
+      var temp=await invoke('smoke_temp_dir');
+      var saved=await window.atlasSaveBackupToFolder(temp,'Workspace_Atlas_auto_backup_smoke.json','{"smoke":true}',5);
+      ok('automatische-backup-schrijven',String(saved).indexOf('Workspace_Atlas_auto_backup_smoke.json')>=0);
+
       ok('lokale-opslag',localStorage.length>0);
       var rejected=false;
       try{await window.atlasLaunchTarget('','','')}catch(e){rejected=String(e).indexOf('Geen geldige startoptie')>=0}
       ok('native-ipc',rejected);
-      await invoke('smoke_report',{payload:JSON.stringify({ok:true,checks:checks,version:'0.8.4'})});
+      await invoke('smoke_report',{payload:JSON.stringify({ok:true,checks:checks,version:'0.8.5'})});
     }catch(e){
-      try{await invoke('smoke_report',{payload:JSON.stringify({ok:false,checks:checks,error:String(e&&e.message||e),version:'0.8.4'})})}catch(_){}
+      try{await invoke('smoke_report',{payload:JSON.stringify({ok:false,checks:checks,error:String(e&&e.message||e),version:'0.8.5'})})}catch(_){}
     }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
