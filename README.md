@@ -4,19 +4,17 @@ Tauri 2 Windows-app voor **Workspace Atlas for Desktop Start**.
 
 ## Actieve testkandidaat
 
-**0.8.4 TEST**
+**0.8.5 TEST**
 
-0.8.4 is de eerste kandidaat met een duidelijk zichtbare grafische herinrichting. De functionaliteit van 0.8.3 blijft behouden, maar de interface is opnieuw opgebouwd als een rustiger **Atlas-startdashboard**:
+0.8.5 bouwt voort op de grafische herinrichting van 0.8.4 en richt zich op **eenvoudige uitleg en betrouwbare back-ups**:
 
-- vaste verticale navigatie op grotere schermen;
-- donker Atlas-frame met lichte werkruimte;
-- sterkere visuele hiërarchie en grotere welkomstzone;
-- ruimere, modernere app- en websitetegels;
-- compacter rechterdashboard voor Favorieten, Recent en Vandaag;
-- duidelijker onderscheid tussen navigatie, actieve omgeving en werkcontent;
-- responsieve terugval naar horizontale navigatie op smallere schermen;
-- gescheiden Werk/Privé-omgevingen en alle bestaande lokale functies blijven behouden;
-- native Windows-bestandskeuze, back-updialoog en eigen Workspace Atlas-appicoon blijven actief;
-- automatische Windows-build en runtime-rooktest via GitHub Actions.
+- Help is herschreven in gewone Nederlandse taal; technische termen zoals protocolhandler en WebView zijn uit de gebruikersuitleg verwijderd.
+- Tegelinstellingen leggen rechtstreeks openen van apps uit zonder technische voorkennis te veronderstellen.
+- Handmatige back-up en herstel blijven beschikbaar.
+- Automatische back-up kan worden ingesteld op wekelijks of maandelijks, met een vaste dag, tijd en opslagmap.
+- Als Atlas op het geplande moment gesloten is, wordt de gemiste back-up bij de eerstvolgende start ingehaald.
+- Alleen de laatste vijf automatische back-ups worden bewaard.
+- De bestaande 0.8.4-interface, Werk/Privé-scheiding, tegels, URL-inbox, activiteiten, taken en notities blijven behouden.
+- De Windows-build wordt automatisch gecontroleerd in de echte Tauri WebView.
 
 De tijdelijke PowerShell/VBS/localhost-helper maakt geen deel uit van deze Tauri-build.
