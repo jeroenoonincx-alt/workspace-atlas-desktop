@@ -30,10 +30,10 @@ jobs:
       - name: Herstel en verifieer exacte Desktop Start-bron
         shell: pwsh
         run: |
-          $parts = Get-ChildItem 'source/0.8.4/part*.b64' | Sort-Object Name
+          $parts = Get-ChildItem 'source/0.8.5/part*.b64' | Sort-Object Name
           if ($parts.Count -ne 3) { throw "Niet alle drie bronchunks aanwezig." }
           $base64 = ($parts | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
-          $gzipPath = Join-Path $env:RUNNER_TEMP 'atlas-0.8.4.html.gz'
+          $gzipPath = Join-Path $env:RUNNER_TEMP 'atlas-0.8.5.html.gz'
           [IO.File]::WriteAllBytes($gzipPath, [Convert]::FromBase64String($base64))
           New-Item -ItemType Directory -Force -Path 'dist' | Out-Null
           $input = [IO.File]::OpenRead($gzipPath)
@@ -45,9 +45,9 @@ jobs:
             } finally { $gzip.Dispose() }
           } finally { $input.Dispose() }
           $hash = (Get-FileHash 'dist/index.html' -Algorithm SHA256).Hash.ToLowerInvariant()
-          $expected = '239db70d6769cb5bf0036bf46519751d850b7244810e49eb28be9e8fba70dcf0'
+          $expected = '3613d7ad87a7bcf9a5ff6d2aa9d543b01c531ac7882bbd8a171b2a202e77c729'
           if ($hash -ne $expected) { throw "Bronhash wijkt af: $hash" }
-          Write-Host "Exacte 0.8.4-bron geverifieerd: $hash"
+          Write-Host "Exacte 0.8.5-bron geverifieerd: $hash"
 
       - name: Voeg interne runtime-test toe
         shell: pwsh
@@ -98,9 +98,9 @@ jobs:
           if (-not $installer) { throw 'NSIS-installer ontbreekt.' }
           $manifest = [ordered]@{
             product = 'Workspace Atlas for Desktop Start'
-            version = '0.8.4'
+            version = '0.8.5'
             candidate = 'TEST'
-            source_sha256 = '239db70d6769cb5bf0036bf46519751d850b7244810e49eb28be9e8fba70dcf0'
+            source_sha256 = '3613d7ad87a7bcf9a5ff6d2aa9d543b01c531ac7882bbd8a171b2a202e77c729'
             portable_sha256 = (Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
             installer_name = $installer.Name
             installer_sha256 = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -112,7 +112,7 @@ jobs:
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: Workspace-Atlas-Desktop-Windows-0.8.4-TEST
+          name: Workspace-Atlas-Desktop-Windows-0.8.5-TEST
           path: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/workspace-atlas-desktop.exe
